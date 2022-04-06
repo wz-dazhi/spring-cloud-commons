@@ -1,4 +1,4 @@
-package com.wz.debug;
+package org.springframework.cloud;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -7,7 +7,7 @@ import org.springframework.core.env.ConfigurableEnvironment;
 
 /**
  * @projectName: spring-cloud-commons
- * @package: com.wz.debug
+ * @package: org.springframework.cloud
  * @className: App
  * @description:
  * @author: zhi
