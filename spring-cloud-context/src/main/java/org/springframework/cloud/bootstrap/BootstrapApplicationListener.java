@@ -94,11 +94,13 @@ public class BootstrapApplicationListener
 	@Override
 	public void onApplicationEvent(ApplicationEnvironmentPreparedEvent event) {
 		ConfigurableEnvironment environment = event.getEnvironment();
+		// 判断bootstrap是否启用, 默认启用
 		if (!environment.getProperty("spring.cloud.bootstrap.enabled", Boolean.class,
 				true)) {
 			return;
 		}
 		// don't listen to events in a bootstrap context
+		// 判断propertySources里是否存在bootstrap, 存在则不执行. 当前方法只执行一次
 		if (environment.getPropertySources().contains(BOOTSTRAP_PROPERTY_SOURCE_NAME)) {
 			return;
 		}
