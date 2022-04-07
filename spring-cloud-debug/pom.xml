@@ -3,38 +3,25 @@
 		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<artifactId>spring-cloud-commons-parent</artifactId>
+		<groupId>org.springframework.cloud</groupId>
+		<version>2.2.100.BUILD-SNAPSHOT</version>
+	</parent>
 
-	<groupId>org.springframework.cloud</groupId>
 	<artifactId>spring-cloud-debug</artifactId>
-	<version>2.2.100.BUILD-SNAPSHOT</version>
-
-	<properties>
-		<maven.compiler.source>8</maven.compiler.source>
-		<maven.compiler.target>8</maven.compiler.target>
-	</properties>
 
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter</artifactId>
-			<version>2.5.12</version>
+			<artifactId>spring-boot-starter-web</artifactId>
+			<version>${spring-boot.version}</version>
 		</dependency>
 
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
-			<artifactId>spring-cloud-starter</artifactId>
-			<version>${project.version}</version>
+			<artifactId>spring-cloud-context</artifactId>
 		</dependency>
 	</dependencies>
-
-	<build>
-		<plugins>
-			<plugin>
-				<groupId>org.springframework.boot</groupId>
-				<artifactId>spring-boot-maven-plugin</artifactId>
-				<version>2.5.12</version>
-			</plugin>
-		</plugins>
-	</build>
 
 </project>
