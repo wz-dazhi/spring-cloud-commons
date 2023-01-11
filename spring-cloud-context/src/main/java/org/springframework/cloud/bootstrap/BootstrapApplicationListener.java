@@ -100,6 +100,7 @@ public class BootstrapApplicationListener implements ApplicationListener<Applica
 			return;
 		}
 		// don't listen to events in a bootstrap context
+		// 判断propertySources里是否存在bootstrap, 存在则不执行. 当前方法只执行一次
 		if (environment.getPropertySources().contains(BOOTSTRAP_PROPERTY_SOURCE_NAME)) {
 			return;
 		}

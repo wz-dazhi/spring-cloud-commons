@@ -82,7 +82,7 @@ public class ResourceServerTokenRelayAutoConfiguration {
 	@Configuration(proxyBeanMethods = false)
 	public static class ResourceServerTokenRelayRegistrationAutoConfiguration implements WebMvcConfigurer {
 
-		@Autowired
+		@Autowired(required = false) // 设置为false, 不然启动失败
 		AccessTokenContextRelay accessTokenContextRelay;
 
 		@Override
