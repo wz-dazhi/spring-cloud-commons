@@ -87,15 +87,21 @@ public class PropertySourceBootstrapConfiguration
 
 	@Override
 	public void initialize(ConfigurableApplicationContext applicationContext) {
+		// 由用户实现的配置, 如: nacos  configServer git 等
 		List<PropertySource<?>> composite = new ArrayList<>();
+		// 用户必须实现PropertySourceLocator 来加载配置中心配置
 		AnnotationAwareOrderComparator.sort(this.propertySourceLocators);
 		boolean empty = true;
+		// 获取当前环境
 		ConfigurableEnvironment environment = applicationContext.getEnvironment();
+		// 遍历用户自定义实现的配置加载器
 		for (PropertySourceLocator locator : this.propertySourceLocators) {
+			// 加载配置集合
 			Collection<PropertySource<?>> source = locator.locateCollection(environment);
 			if (source == null || source.size() == 0) {
 				continue;
 			}
+			// 遍历自定义配置, 放入sourceList中
 			List<PropertySource<?>> sourceList = new ArrayList<>();
 			for (PropertySource<?> p : source) {
 				if (p instanceof EnumerablePropertySource) {
@@ -107,9 +113,11 @@ public class PropertySourceBootstrapConfiguration
 				}
 			}
 			logger.info("Located property source: " + sourceList);
+			// 添加到集合中
 			composite.addAll(sourceList);
 			empty = false;
 		}
+		// 不为空, 说明加载了远程配置. 重新加载日志相关配置, 重新初始化日志系统
 		if (!empty) {
 			MutablePropertySources propertySources = environment.getPropertySources();
 			String logConfig = environment.resolvePlaceholders("${logging.config:}");
