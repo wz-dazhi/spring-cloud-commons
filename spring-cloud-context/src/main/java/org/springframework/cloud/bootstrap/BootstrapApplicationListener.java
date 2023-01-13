@@ -95,7 +95,10 @@ public class BootstrapApplicationListener implements ApplicationListener<Applica
 
 	@Override
 	public void onApplicationEvent(ApplicationEnvironmentPreparedEvent event) {
+		// 获取springboot 环境对象
 		ConfigurableEnvironment environment = event.getEnvironment();
+		// 1. 判断是否启用bootstrap.enable(默认false) || 是否存在标记类org.springframework.cloud.bootstrap.marker.Marker
+		// 2. 2.4配置文件发生了变化, 此处判断是否还使用之前的处理方式
 		if (!bootstrapEnabled(environment) && !useLegacyProcessing(environment)) {
 			return;
 		}
@@ -104,18 +107,23 @@ public class BootstrapApplicationListener implements ApplicationListener<Applica
 		if (environment.getPropertySources().contains(BOOTSTRAP_PROPERTY_SOURCE_NAME)) {
 			return;
 		}
+		// 创建SpringCloud 容器
 		ConfigurableApplicationContext context = null;
+		// 解析配置文件名称, 默认为bootstrap
 		String configName = environment.resolvePlaceholders("${spring.cloud.bootstrap.name:bootstrap}");
+		// 遍历初始化器, 自定义父容器, 并设置parent 父容器
 		for (ApplicationContextInitializer<?> initializer : event.getSpringApplication().getInitializers()) {
 			if (initializer instanceof ParentContextApplicationContextInitializer) {
 				context = findBootstrapContext((ParentContextApplicationContextInitializer) initializer, configName);
 			}
 		}
+		// SpringCloud容器不存在, 创建容器, 并添加关闭容器监听器
 		if (context == null) {
 			context = bootstrapServiceContext(environment, event.getSpringApplication(), configName);
 			event.getSpringApplication().addListeners(new CloseContextOnFailureApplicationListener(context));
 		}
 
+		// 应用
 		apply(context, event.getSpringApplication(), environment);
 	}
 
@@ -142,21 +150,26 @@ public class BootstrapApplicationListener implements ApplicationListener<Applica
 
 	private ConfigurableApplicationContext bootstrapServiceContext(ConfigurableEnvironment environment,
 			final SpringApplication application, String configName) {
+		// 创建父级环境
 		StandardEnvironment bootstrapEnvironment = new StandardEnvironment();
+		// 获取所有父级配置, 并删除所有默认配置. 留下[]
 		MutablePropertySources bootstrapProperties = bootstrapEnvironment.getPropertySources();
 		for (PropertySource<?> source : bootstrapProperties) {
 			bootstrapProperties.remove(source.getName());
 		}
+		// 从子环境或命令行中获取bootstrap文件的路径
 		String configLocation = environment.resolvePlaceholders("${spring.cloud.bootstrap.location:}");
 		String configAdditionalLocation = environment
 				.resolvePlaceholders("${spring.cloud.bootstrap.additional-location:}");
 		Map<String, Object> bootstrapMap = new HashMap<>();
+		// 设置配置文件名字, 默认为bootstrap
 		bootstrapMap.put("spring.config.name", configName);
 		// if an app (or test) uses spring.main.web-application-type=reactive, bootstrap
 		// will fail
 		// force the environment to use none, because if though it is set below in the
 		// builder
 		// the environment overrides it
+		// 设置当前环境为none, 设置bootstrap 文件路径  和 额外的路径
 		bootstrapMap.put("spring.main.web-application-type", "none");
 		if (StringUtils.hasText(configLocation)) {
 			bootstrapMap.put("spring.config.location", configLocation);
@@ -164,7 +177,9 @@ public class BootstrapApplicationListener implements ApplicationListener<Applica
 		if (StringUtils.hasText(configAdditionalLocation)) {
 			bootstrapMap.put("spring.config.additional-location", configAdditionalLocation);
 		}
+		// 将添加的map放入环境第一个, 当做标记, 父容器第一次执行, 执行后删除该标记
 		bootstrapProperties.addFirst(new MapPropertySource(BOOTSTRAP_PROPERTY_SOURCE_NAME, bootstrapMap));
+		// 遍历子配置, 除StubPropertySource以外的配置(如: servlet相关配置), 都放入bootstrap 配置的后面
 		for (PropertySource<?> source : environment.getPropertySources()) {
 			if (source instanceof StubPropertySource) {
 				continue;
@@ -172,6 +187,7 @@ public class BootstrapApplicationListener implements ApplicationListener<Applica
 			bootstrapProperties.addLast(source);
 		}
 		// TODO: is it possible or sensible to share a ResourceLoader?
+		// 构建bootstrap SpringApplication对象
 		SpringApplicationBuilder builder = new SpringApplicationBuilder().profiles(environment.getActiveProfiles())
 				.bannerMode(Mode.OFF).environment(bootstrapEnvironment)
 				// Don't use the default properties in this builder
@@ -194,7 +210,9 @@ public class BootstrapApplicationListener implements ApplicationListener<Applica
 			// way to switch those off.
 			builderApplication.setListeners(filterListeners(builderApplication.getListeners()));
 		}
+		// 设置资源类为BootstrapImportSelectorConfiguration, 该类会import所有在spring.factories 配置文件中配置的 BootstrapConfiguration
 		builder.sources(BootstrapImportSelectorConfiguration.class);
+		// 运行父容器
 		final ConfigurableApplicationContext context = builder.run();
 		// gh-214 using spring.application.name=bootstrap to set the context id via
 		// `ContextIdApplicationContextInitializer` prevents apps from getting the actual
@@ -202,10 +220,13 @@ public class BootstrapApplicationListener implements ApplicationListener<Applica
 		// during the bootstrap phase.
 		context.setId("bootstrap");
 		// Make the bootstrap context a parent of the app context
+		// 将父容器设置到SpringBoot容器中
 		addAncestorInitializer(application, context);
 		// It only has properties in it now that we don't want in the parent so remove
 		// it (and it will be added back later)
+		// 最后删除标记的bootstrap配置
 		bootstrapProperties.remove(BOOTSTRAP_PROPERTY_SOURCE_NAME);
+		// 合并默认的配置
 		mergeDefaultProperties(environment.getPropertySources(), bootstrapProperties);
 		return context;
 	}
@@ -372,16 +393,20 @@ public class BootstrapApplicationListener implements ApplicationListener<Applica
 			while (context.getParent() != null && context.getParent() != context) {
 				context = (ConfigurableApplicationContext) context.getParent();
 			}
+			// 将bootstrap 配置合并到子容器中
 			reorderSources(context.getEnvironment());
+			// 将父容器设置为子容器的parent
 			new ParentContextApplicationContextInitializer(this.parent).initialize(context);
 		}
 
 		private void reorderSources(ConfigurableEnvironment environment) {
+			// 移出springCloudDefaultProperties配置
 			PropertySource<?> removed = environment.getPropertySources().remove(DEFAULT_PROPERTIES);
 			if (removed instanceof ExtendedDefaultPropertySource) {
 				ExtendedDefaultPropertySource defaultProperties = (ExtendedDefaultPropertySource) removed;
 				environment.getPropertySources()
 						.addLast(new MapPropertySource(DEFAULT_PROPERTIES, defaultProperties.getSource()));
+				// 遍历springCloudDefaultProperties 配置, 判断子容器中是否存在bootstrap 配置, 如果不存在, 则添加进去
 				for (PropertySource<?> source : defaultProperties.getPropertySources().getPropertySources()) {
 					if (!environment.getPropertySources().contains(source.getName())) {
 						environment.getPropertySources().addBefore(DEFAULT_PROPERTIES, source);
