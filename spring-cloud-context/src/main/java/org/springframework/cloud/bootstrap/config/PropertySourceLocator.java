@@ -48,10 +48,12 @@ public interface PropertySourceLocator {
 	}
 
 	static Collection<PropertySource<?>> locateCollection(PropertySourceLocator locator, Environment environment) {
+		// 调用用户自定义实现的加载配置
 		PropertySource<?> propertySource = locator.locate(environment);
 		if (propertySource == null) {
 			return Collections.emptyList();
 		}
+		// 判断属性是否属于复合型的配置, 如果是复合型的. 则进行遍历添加到list中, 然后返回
 		if (CompositePropertySource.class.isInstance(propertySource)) {
 			Collection<PropertySource<?>> sources = ((CompositePropertySource) propertySource).getPropertySources();
 			List<PropertySource<?>> filteredSources = new ArrayList<>();
