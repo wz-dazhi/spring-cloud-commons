@@ -91,15 +91,21 @@ public abstract class ContextRefresher {
 	}
 
 	public synchronized Set<String> refresh() {
+		// 刷新环境
 		Set<String> keys = refreshEnvironment();
+		// 刷新所有refresh的bean
 		this.scope.refreshAll();
 		return keys;
 	}
 
 	public synchronized Set<String> refreshEnvironment() {
+		// 提取环境中所有的配置, key=value
 		Map<String, Object> before = extract(this.context.getEnvironment().getPropertySources());
+		// 更新环境, 会创建一个容器. 再走一遍springboot 的流程, 其中会走BootstrapApplicationListener.
 		updateEnvironment();
+		// 变更值
 		Set<String> keys = changes(before, extract(this.context.getEnvironment().getPropertySources())).keySet();
+		// 发布环境变更事件
 		this.context.publishEvent(new EnvironmentChangeEvent(this.context, keys));
 		return keys;
 	}
