@@ -73,6 +73,7 @@ public class LegacyContextRefresher extends ContextRefresher {
 					.web(WebApplicationType.NONE).environment(environment);
 			// Just the listeners that affect the environment (e.g. excluding logging
 			// listener because it has side effects)
+			// 这里重新创建容器, 并添加BootstrapApplicationListener, 所以在执行的时候. spring.application.name 需要设置到bootstrap配置文件中, 不然读取不到
 			builder.application().setListeners(
 					Arrays.asList(new BootstrapApplicationListener(), new BootstrapConfigFileApplicationListener()));
 			capture = builder.run();
