@@ -93,6 +93,7 @@ public class RefreshAutoConfiguration {
 	@Bean
 	@ConditionalOnMissingBean(RefreshScope.class)
 	public static RefreshScope refreshScope() {
+		// 配置动态刷新scope
 		return new RefreshScope();
 	}
 
@@ -107,6 +108,7 @@ public class RefreshAutoConfiguration {
 	@ConditionalOnBootstrapEnabled
 	public LegacyContextRefresher legacyContextRefresher(ConfigurableApplicationContext context, RefreshScope scope,
 			RefreshProperties properties) {
+		// 启用bootstrap时, 返回LegacyContextRefresher对象
 		return new LegacyContextRefresher(context, scope, properties);
 	}
 
@@ -115,11 +117,13 @@ public class RefreshAutoConfiguration {
 	@ConditionalOnBootstrapDisabled
 	public ConfigDataContextRefresher configDataContextRefresher(ConfigurableApplicationContext context,
 			RefreshScope scope, RefreshProperties properties) {
+		// 不启用bootstrap时, 返回ConfigDataContextRefresher
 		return new ConfigDataContextRefresher(context, scope, properties);
 	}
 
 	@Bean
 	public RefreshEventListener refreshEventListener(ContextRefresher contextRefresher) {
+		// 动态刷新监听器
 		return new RefreshEventListener(contextRefresher);
 	}
 
