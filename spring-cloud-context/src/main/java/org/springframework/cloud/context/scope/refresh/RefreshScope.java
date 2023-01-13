@@ -80,6 +80,7 @@ public class RefreshScope extends GenericScope
 	 * Creates a scope instance and gives it the default name: "refresh".
 	 */
 	public RefreshScope() {
+		// 设置name为refresh
 		super.setName("refresh");
 	}
 
@@ -113,7 +114,9 @@ public class RefreshScope extends GenericScope
 	}
 
 	public void start(ContextRefreshedEvent event) {
+		// 容器刷新监听事件
 		if (event.getApplicationContext() == this.context && this.eager && this.registry != null) {
+			// 初始化
 			eagerlyInitialize();
 		}
 	}
@@ -121,6 +124,7 @@ public class RefreshScope extends GenericScope
 	private void eagerlyInitialize() {
 		for (String name : this.context.getBeanDefinitionNames()) {
 			BeanDefinition definition = this.registry.getBeanDefinition(name);
+			// 判断bean的scope为 refresh, 并且不属于懒加载. 直接初始化
 			if (this.getName().equals(definition.getScope()) && !definition.isLazyInit()) {
 				Object bean = this.context.getBean(name);
 				if (bean != null) {
@@ -149,7 +153,9 @@ public class RefreshScope extends GenericScope
 	@ManagedOperation(description = "Dispose of the current instance of all beans "
 			+ "in this scope and force a refresh on next method execution.")
 	public void refreshAll() {
+		// 先销毁bean, 后面getBean时重新创建
 		super.destroy();
+		// 发布RefreshScope刷新事件
 		this.context.publishEvent(new RefreshScopeRefreshedEvent());
 	}
 
